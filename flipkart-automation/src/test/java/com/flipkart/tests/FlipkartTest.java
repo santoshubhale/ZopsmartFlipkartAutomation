@@ -39,7 +39,9 @@ public class FlipkartTest extends BaseTest {
         test.info("Applying brand filter: " + brand);
         results.applyBrandFilter(brand);
         Assert.assertTrue(results.isBrandApplied(brand), "Brand filter not applied: " + brand);
-        for (Product p : results.getProducts(count)) {
+        List<Product> brandProducts = results.getProducts(count, brand);
+        Assert.assertFalse(brandProducts.isEmpty(), "No " + brand + " products found after filtering");
+        for (Product p : brandProducts) {
             Assert.assertTrue(brandMatches(p.name, brand),
                     "Not a " + brand + " mobile: " + p.name);
         }
@@ -50,7 +52,7 @@ public class FlipkartTest extends BaseTest {
         ScreenshotUtil.takeAndAttach(driver, test, "04_sorted", "Sorted results");
 
         test.info("Validating numeric price order");
-        List<Product> products = results.getProducts(count);
+        List<Product> products = results.getProducts(count, brand);
         List<Long> prices = new ArrayList<>();
         for (Product p : products) {
             prices.add(p.price);

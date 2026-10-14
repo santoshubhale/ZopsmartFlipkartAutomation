@@ -125,6 +125,11 @@ public class ResultsPage extends BasePage {
 
     /** Reads name and price of the first 'count' products (sponsored cards are skipped). */
     public List<Product> getProducts(int count) {
+        return getProducts(count, null);
+    }
+
+    /** Reads products while excluding sponsored cards and, when supplied, other brands. */
+    public List<Product> getProducts(int count, String requiredBrand) {
         wait.until(d -> !d.findElements(productCards).isEmpty());
         List<Product> products = new ArrayList<>();
         int total = driver.findElements(productCards).size();
@@ -140,12 +145,25 @@ public class ResultsPage extends BasePage {
                     continue;
                 }
                 long price = PriceUtil.parse(priceEls.get(0).getText());
-                products.add(new Product(card.getAttribute("data-id"), readName(card), price));
+                String name = readName(card);
+                if (requiredBrand != null && !matchesBrand(name, requiredBrand)) {
+                    Log.warn("Ignoring non-" + requiredBrand + " result: " + name);
+                    continue;
+                }
+                products.add(new Product(card.getAttribute("data-id"), name, price));
             } catch (StaleElementReferenceException e) {
                 Log.warn("Card " + i + " changed while reading, skipped");
             }
         }
         return products;
+    }
+
+    private boolean matchesBrand(String productName, String brand) {
+        return normalize(productName).contains(normalize(brand));
+    }
+
+    private String normalize(String text) {
+        return text.toLowerCase().replaceAll("[^a-z0-9]", "");
     }
 
     private String readName(WebElement card) {
